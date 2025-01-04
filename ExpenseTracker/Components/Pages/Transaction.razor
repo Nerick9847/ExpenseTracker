@@ -4,6 +4,8 @@
     .dashboard-header {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
     }
 
     .chart-container {
@@ -17,33 +19,115 @@
     .transaction-item {
         display: flex;
         justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
+        padding: 15px 0;
+        border-bottom: 1px solid #e0e0e0;
     }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .modal-content {
+        border-radius: 15px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn {
+        border-radius: 8px;
+    }
+
+    .btn-primary {
+        background-color: #2e5956;
+        border-color:#2e5956;
+    }
+
+    .btn-primary:hover {
+        background-color: #6f8f15;
+        border-color: #003366;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+    }
+
+    .btn-outline-primary {
+        border-color: #0056b3;
+        color: #0056b3;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #0056b3;
+        color: white;
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .search-bar .form-control {
+        width: 200px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .transaction-table th {
+        background-color: #f8f9fa;
+    }
+
+    .transaction-table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+   
 </style>
 
-<div class="d-flex justify-content-between mb-3">
+<div class="dashboard-header">
     <div>
         <button class="btn btn-primary" @onclick="OpenAddModal">Add Transaction</button>
         <button class="btn btn-secondary" @onclick="OpenCategoryModal">Add Category</button>
     </div>
 
     <!-- Search and Filter Section -->
-    <div class="d-flex align-items-center">
-        <input type="text" class="form-control me-2" placeholder="Search by Description" @bind="searchQuery" />
-        <select class="form-control me-2" @bind="selectedCategory">
+    <div class="search-bar">
+        <input type="text" class="form-control" placeholder="Search by Description" @bind="searchQuery" />
+        <select class="form-control" @bind="selectedCategory">
             <option value="">All Categories</option>
             @foreach (var category in categories)
             {
                 <option value="@category">@category</option>
             }
         </select>
-        <input type="date" class="form-control me-2" @bind="filterDate" />
+        <input type="date" class="form-control" @bind="filterDate" />
         <button class="btn btn-outline-primary" @onclick="SearchTransactions">Search</button>
     </div>
 </div>
 
-<table class="table">
+<table class="table transaction-table">
     <thead>
         <tr>
             <th>Description</th>
@@ -193,13 +277,13 @@
     private void OpenEditModal(FinancialTransaction transaction)
     {
         transactionModel = new FinancialTransaction
-            {
-                Description = transaction.Description,
-                Date = transaction.Date,
-                Amount = transaction.Amount,
-                Type = transaction.Type,
-                Category = transaction.Category
-            };
+        {
+            Description = transaction.Description,
+            Date = transaction.Date,
+            Amount = transaction.Amount,
+            Type = transaction.Type,
+            Category = transaction.Category
+        };
         modalTitle = "Edit Transaction";
         showModal = true;
     }
