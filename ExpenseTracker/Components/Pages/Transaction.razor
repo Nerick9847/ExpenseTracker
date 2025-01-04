@@ -23,33 +23,56 @@
 </style>
 
 <div class="d-flex justify-content-between mb-3">
-    <button class="btn btn-primary" @onclick="OpenModal">Add Transaction</button>
+    <div>
+        <button class="btn btn-primary" @onclick="OpenAddModal">Add Transaction</button>
+        <button class="btn btn-secondary" @onclick="OpenCategoryModal">Add Category</button>
+    </div>
 
-    <!-- Search Input Box -->
-    <div class="d-flex">
+    <!-- Search and Filter Section -->
+    <div class="d-flex align-items-center">
         <input type="text" class="form-control me-2" placeholder="Search by Description" @bind="searchQuery" />
+        <select class="form-control me-2" @bind="selectedCategory">
+            <option value="">All Categories</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+        <input type="date" class="form-control me-2" @bind="filterDate" />
         <button class="btn btn-outline-primary" @onclick="SearchTransactions">Search</button>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="dashboard-card">
-            <h5>Top Transactions</h5>
-            <div class="transaction-list">
-                @foreach (var transaction in filteredTransactions)
-                {
-                    <div class="transaction-item">
-                        <span>@transaction.Description</span>
-                        <span>@transaction.Date.ToString("yyyy-MM-dd")</span>
-                        <span>@transaction.Amount.ToString()</span>
-                        <span class="@(transaction.Type == "Income" ? "text-success" : "text-danger")">@transaction.Type</span>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var transaction in filteredTransactions)
+        {
+            <tr>
+                <td>@transaction.Description</td>
+                <td>@transaction.Date.ToString("yyyy-MM-dd")</td>
+                <td>@transaction.Amount.ToString("C")</td>
+                <td class="@(transaction.Type == "Income" ? "text-success" : "text-danger")">@transaction.Type</td>
+                <td>@transaction.Category</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-warning btn-sm" @onclick="() => OpenEditModal(transaction)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteTransaction(transaction)">Delete</button>
                     </div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @if (showModal)
 {
@@ -57,35 +80,69 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Transaction</h5>
+                    <h5 class="modal-title">@modalTitle</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label>Description</label>
-                        <input type="text" class="form-control" @bind="newTransaction.Description" />
+                        <input type="text" class="form-control" @bind="transactionModel.Description" />
                     </div>
                     <div class="mb-3">
                         <label>Date</label>
-                        <input type="date" class="form-control" @bind="newTransaction.Date" />
+                        <input type="date" class="form-control" @bind="transactionModel.Date" />
                     </div>
                     <div class="mb-3">
                         <label>Amount</label>
-                        <input type="number" class="form-control" @bind="newTransaction.Amount" />
+                        <input type="number" class="form-control" @bind="transactionModel.Amount" />
                     </div>
                     <div class="mb-3">
                         <label>Type</label>
-                        <select class="form-control" @bind="newTransaction.Type">
-                            <option value=""></option>
+                        <select class="form-control" @bind="transactionModel.Type">
                             <option value="Income">Income</option>
                             <option value="Expense">Expense</option>
                             <option value="Debt">Debt</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label>Category</label>
+                        <select class="form-control" @bind="transactionModel.Category">
+                            <option value="">Select Category</option>
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category">@category</option>
+                            }
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
-                    <button type="button" class="btn btn-primary" @onclick="AddTransaction">Add</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveTransaction">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@if (showCategoryModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Category</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCategoryModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Category Name</label>
+                        <input type="text" class="form-control" @bind="newCategory" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCategoryModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddCategory">Add</button>
                 </div>
             </div>
         </div>
@@ -94,112 +151,117 @@
 }
 
 @code {
-    // This method is called when the dashboard page is opened
-    protected override void OnInitialized()
-    {
-        CalculateTotals();
-        filteredTransactions = transactions; // Initially show all transactions
-    }
-
-    // Creating a financial transaction class with some properties
     public class FinancialTransaction
     {
         public string Description { get; set; }
         public DateTime Date { get; set; }
         public decimal Amount { get; set; }
-        public string Type { get; set; } // Income, Expense, Debt
+        public string Type { get; set; }
+        public string Category { get; set; }
     }
 
-    // Declaring some fields
-    private FinancialTransaction newTransaction = new FinancialTransaction(); // FinancialTransaction class object
-    private bool showModal = false; // Determines whether to show the add transaction modal form
-    private string searchQuery = string.Empty; // For binding the search input
-
-    // These fields hold the total values after CalculateTotals() method is called
-    private decimal totalIncome;
-    private decimal totalExpense;
-    private decimal totalDebt;
-
-    // Declaring and assigning value to a list of type FinancialTransaction
-    private List<FinancialTransaction> transactions = new List<FinancialTransaction>(){
-        new FinancialTransaction { Description = "Grocery Shopping", Date = DateTime.Parse("2024-12-25"), Amount = 150, Type = "Expense" },
-        new FinancialTransaction { Description = "Freelance Payment", Date = DateTime.Parse("2024-12-24"), Amount = 500, Type = "Income" },
-        new FinancialTransaction { Description = "Borrowed from Someone", Date = DateTime.Parse("2024-12-22"), Amount = 300, Type = "Debt" }
+    private List<FinancialTransaction> transactions = new List<FinancialTransaction>
+    {
+        new FinancialTransaction { Description = "Grocery Shopping", Date = DateTime.Parse("2024-12-25"), Amount = 150, Type = "Expense", Category = "Food" },
+        new FinancialTransaction { Description = "Freelance Payment", Date = DateTime.Parse("2024-12-24"), Amount = 500, Type = "Income", Category = "Work" },
+        new FinancialTransaction { Description = "Borrowed from Someone", Date = DateTime.Parse("2024-12-22"), Amount = 300, Type = "Debt", Category = "Loan" }
     };
 
-    // This list will hold the filtered transactions based on search input
-    private List<FinancialTransaction> filteredTransactions;
+    private List<FinancialTransaction> filteredTransactions = new List<FinancialTransaction>();
+    private List<string> categories = new List<string> { "Food", "Work", "Loan" };
+    private FinancialTransaction transactionModel = new FinancialTransaction();
+    private bool showModal = false;
+    private bool showCategoryModal = false;
+    private string modalTitle = "Add Transaction";
+    private string searchQuery = string.Empty;
+    private string selectedCategory = string.Empty;
+    private DateTime? filterDate = null;
+    private string newCategory = string.Empty;
 
-    // Method to open the modal for adding transactions
-    private void OpenModal()
+    protected override void OnInitialized()
     {
-        newTransaction = new FinancialTransaction();
-        newTransaction.Date = DateTime.Now;
+        filteredTransactions = transactions;
+    }
+
+    private void OpenAddModal()
+    {
+        transactionModel = new FinancialTransaction { Date = DateTime.Now };
+        modalTitle = "Add Transaction";
         showModal = true;
     }
 
-    // Method to calculate total amounts for each transaction type
-    private void CalculateTotals()
+    private void OpenEditModal(FinancialTransaction transaction)
     {
-        totalIncome = transactions
-            .Where(t => t.Type == "Income")
-            .Sum(t => t.Amount);
-
-        totalExpense = transactions
-            .Where(t => t.Type == "Expense")
-            .Sum(t => t.Amount);
-
-        totalDebt = transactions
-            .Where(t => t.Type == "Debt")
-            .Sum(t => t.Amount);
+        transactionModel = new FinancialTransaction
+            {
+                Description = transaction.Description,
+                Date = transaction.Date,
+                Amount = transaction.Amount,
+                Type = transaction.Type,
+                Category = transaction.Category
+            };
+        modalTitle = "Edit Transaction";
+        showModal = true;
     }
 
-    // Method to close the modal
     private void CloseModal()
     {
         showModal = false;
     }
 
-    // Method to add a new transaction
-    private void AddTransaction()
+    private void SaveTransaction()
     {
-        try
+        if (modalTitle == "Add Transaction")
         {
-            if (newTransaction != null && !string.IsNullOrWhiteSpace(newTransaction.Description))
-            {
-                transactions.Add(new FinancialTransaction
-                {
-                    Description = newTransaction.Description,
-                    Date = newTransaction.Date == default ? DateTime.Now : newTransaction.Date,
-                    Amount = newTransaction.Amount,
-                    Type = newTransaction.Type
-                });
-
-                CalculateTotals(); // Update totals after adding a new transaction
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
-        finally
-        {
-            CloseModal();
-        }
-    }
-
-    // Method to filter transactions based on search input
-    private void SearchTransactions()
-    {
-        if (!string.IsNullOrWhiteSpace(searchQuery))
-        {
-            filteredTransactions = transactions
-                .Where(t => t.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            transactions.Add(transactionModel);
         }
         else
         {
-            filteredTransactions = transactions; // If search is empty, show all transactions
+            var existingTransaction = transactions.FirstOrDefault(t => t.Description == transactionModel.Description);
+            if (existingTransaction != null)
+            {
+                existingTransaction.Date = transactionModel.Date;
+                existingTransaction.Amount = transactionModel.Amount;
+                existingTransaction.Type = transactionModel.Type;
+                existingTransaction.Category = transactionModel.Category;
+            }
         }
+
+        filteredTransactions = transactions;
+        CloseModal();
+    }
+
+    private void DeleteTransaction(FinancialTransaction transaction)
+    {
+        transactions.Remove(transaction);
+        filteredTransactions = transactions;
+    }
+
+    private void SearchTransactions()
+    {
+        filteredTransactions = transactions.Where(t =>
+            (string.IsNullOrWhiteSpace(searchQuery) || t.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrWhiteSpace(selectedCategory) || t.Category == selectedCategory) &&
+            (!filterDate.HasValue || t.Date.Date == filterDate.Value.Date)).ToList();
+    }
+
+    private void OpenCategoryModal()
+    {
+        newCategory = string.Empty;
+        showCategoryModal = true;
+    }
+
+    private void CloseCategoryModal()
+    {
+        showCategoryModal = false;
+    }
+
+    private void AddCategory()
+    {
+        if (!string.IsNullOrWhiteSpace(newCategory) && !categories.Contains(newCategory))
+        {
+            categories.Add(newCategory);
+        }
+        CloseCategoryModal();
     }
 }

@@ -51,10 +51,18 @@
                 <h2>45879</h2>
             </div>
         </div>
-        <div>
-            <h3>Bar Graph</h3>
-            <MudChart ChartType="ChartType.Bar" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" Height="300px"></MudChart>
+        <div style="width: 100%; margin: 0; padding: 0;">
+            <h3 style="text-align: center; margin-bottom: 20px;">Bar Graph</h3>
+            <MudChart ChartType="ChartType.Bar"
+                      ChartSeries="@Series"
+                      @bind-SelectedIndex="Index"
+                      XAxisLabels="@XAxisLabels"
+                      Width="100%"
+                      Height="400px"
+                      Style="width: 100%;">
+            </MudChart>
         </div>
+
     </div>
 </div>
 
