@@ -75,13 +75,11 @@
 </style>
 
 <div class="dashboard-header">
-    <!-- Buttons for Add Transaction and Add Category -->
     <div class="buttons-container">
         <button class="btn btn-primary" @onclick="OpenAddModal">Add Transaction</button>
         <button class="btn btn-secondary" @onclick="OpenCategoryModal">Add Category</button>
     </div>
 
-    <!-- Filter Controls -->
     <div class="filter-container">
         <select class="form-control" @bind="selectedType">
             <option value="">Select Type</option>
@@ -99,11 +97,10 @@
         <input type="date" class="form-control" @bind="startDate" />
         <input type="date" class="form-control" @bind="endDate" />
         <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
-        <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button> <!-- Clear Filters Button -->
+        <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
     </div>
 </div>
 
-<!-- Transaction Table -->
 <table class="table transaction-table">
     <thead>
         <tr>
@@ -135,7 +132,6 @@
     </tbody>
 </table>
 
-<!-- Transaction Modal -->
 @if (showTransactionModal)
 {
     <div class="modal">
@@ -183,7 +179,6 @@
     </div>
 }
 
-<!-- Category Modal -->
 @if (showCategoryModal)
 {
     <div class="modal">
@@ -230,15 +225,15 @@
     private void OpenEditModal(FinancialTransaction transaction)
     {
         transactionModel = new FinancialTransaction
-        {
-            Id = transaction.Id,
-            Description = transaction.Description,
-            Notes = transaction.Notes,
-            Date = transaction.Date,
-            Amount = transaction.Amount,
-            Type = transaction.Type,
-            Category = transaction.Category
-        };
+            {
+                Id = transaction.Id,
+                Description = transaction.Description,
+                Notes = transaction.Notes,
+                Date = transaction.Date,
+                Amount = transaction.Amount,
+                Type = transaction.Type,
+                Category = transaction.Category
+            };
         modalTitle = "Edit Transaction";
         showTransactionModal = true;
     }
@@ -296,7 +291,7 @@
         selectedCategory = string.Empty;
         startDate = DateTime.MinValue;
         endDate = DateTime.MaxValue;
-        FilterTransactions();  // Reset the filter and show all transactions
+        FilterTransactions();
     }
 
     private void OpenCategoryModal()

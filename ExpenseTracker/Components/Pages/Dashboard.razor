@@ -1,4 +1,6 @@
 ﻿@page "/dashboard"
+@using ExpenseTracker.Services
+@inject TransactionService transactionService
 
 <style>
     .dashboard-card {
@@ -91,44 +93,14 @@
     private decimal totalExpense;
     private decimal totalDebt;
 
-    private List<Transaction> transactions = new List<Transaction>()
-    {
-        new Transaction { Description = "Grocery Shopping", Date = DateTime.Parse("2024-12-25"), Amount = 150, Type = "Expense" },
-        new Transaction { Description = "Freelance Payment", Date = DateTime.Parse("2024-12-24"), Amount = 500, Type = "Income" },
-        new Transaction { Description = "Borrowed from Someone", Date = DateTime.Parse("2024-12-22"), Amount = 300, Type = "Debt" }
-    };
-
     protected override void OnInitialized()
     {
-        CalculateTotals();
-        CalculateTotalBalance();
-    }
+        // Fetch totals from the TransactionService
+        totalIncome = transactionService.GetTotalIncome();
+        totalExpense = transactionService.GetTotalExpense();
+        totalDebt = transactionService.GetTotalDebt();
 
-    private void CalculateTotals()
-    {
-        totalIncome = transactions
-            .Where(t => t.Type == "Income")
-            .Sum(t => t.Amount);
-
-        totalExpense = transactions
-            .Where(t => t.Type == "Expense")
-            .Sum(t => t.Amount);
-
-        totalDebt = transactions
-            .Where(t => t.Type == "Debt")
-            .Sum(t => t.Amount);
-    }
-
-    private void CalculateTotalBalance()
-    {
+        // Calculate the total balance
         totalBalance = totalIncome + totalDebt - totalExpense;
-    }
-
-    public class Transaction
-    {
-        public string Description { get; set; }
-        public DateTime Date { get; set; }
-        public decimal Amount { get; set; }
-        public string Type { get; set; } // Income, Expense, Debt
     }
 }
