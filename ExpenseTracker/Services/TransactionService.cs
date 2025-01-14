@@ -1,46 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ExpenseTracker.Services
+﻿namespace ExpenseTracker.Services
 {
     public class TransactionService
     {
-        private List<Transaction> transactions = new List<Transaction>();
-
-        public List<Transaction> GetTransactions()
+        // No need for an instance of TransactionDatabase as it is static
+        public TransactionService()
         {
-            return transactions;
         }
 
-        public void AddTransaction(Transaction transaction)
+        // Get all transactions from the database
+        public async Task<List<FinancialTransaction>> GetTransactionsAsync()
         {
-            transactions.Add(transaction);
+            var database = await TransactionDatabase.LoadDatabaseAsync();
+            return database.Transactions;
         }
 
-        public decimal GetTotalIncome()
+        // Add a new transaction to the database
+        public async Task AddTransactionAsync(FinancialTransaction transaction)
         {
+            var database = await TransactionDatabase.LoadDatabaseAsync();
+            database.Transactions.Add(transaction);
+            await TransactionDatabase.SaveDatabaseAsync(database);
+        }
+
+        // Calculate total income (inflow)
+        public async Task<decimal> GetTotalIncomeAsync()
+        {
+            var transactions = await GetTransactionsAsync();
             return transactions.Where(t => t.Type == "Income").Sum(t => t.Amount);
         }
 
-        public decimal GetTotalExpense()
+        // Calculate total expense (outflow)
+        public async Task<decimal> GetTotalExpenseAsync()
         {
+            var transactions = await GetTransactionsAsync();
             return transactions.Where(t => t.Type == "Expense").Sum(t => t.Amount);
         }
 
-        public decimal GetTotalDebt()
+        // Calculate total debt
+        public async Task<decimal> GetTotalDebtAsync()
         {
+            var transactions = await GetTransactionsAsync();
             return transactions.Where(t => t.Type == "Debt").Sum(t => t.Amount);
         }
-    }
-
-    public class Transaction
-    {
-        public string Description { get; set; }
-        public DateTime Date { get; set; }
-        public decimal Amount { get; set; }
-        public string Type { get; set; } // "Income", "Expense", "Debt"
     }
 }

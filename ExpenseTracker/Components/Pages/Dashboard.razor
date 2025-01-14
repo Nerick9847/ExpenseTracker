@@ -93,12 +93,13 @@
     private decimal totalExpense;
     private decimal totalDebt;
 
-    protected override void OnInitialized()
+    // Use async Task OnInitializedAsync for async initialization
+    protected override async Task OnInitializedAsync()
     {
-        // Fetch totals from the TransactionService
-        totalIncome = transactionService.GetTotalIncome();
-        totalExpense = transactionService.GetTotalExpense();
-        totalDebt = transactionService.GetTotalDebt();
+        // Fetch totals from the TransactionService asynchronously
+        totalIncome = await transactionService.GetTotalIncomeAsync();
+        totalExpense = await transactionService.GetTotalExpenseAsync();
+        totalDebt = await transactionService.GetTotalDebtAsync();
 
         // Calculate the total balance
         totalBalance = totalIncome + totalDebt - totalExpense;
