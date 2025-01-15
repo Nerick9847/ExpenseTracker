@@ -4,110 +4,141 @@
 @inject TransactionService transactionService
 @inject DebtService debtService
 
-<style>
-    
+<h3>Dashboard</h3>
 
-    .dashboard-card {
-        border-radius: 14px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 20px;
-        background-color: #d9e2f3;
-        border: 4px solid #000000;
-    }
-
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .total-balance {
-        display: inline-block;
-        padding: 10px 20px;
-        border-radius: 14px;
-        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1) inset;
-        background-color: #f3f4f6;
-        border: 2px solid #888a89;
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .chart-container {
-        height: 300px;
-    }
-</style>
-
- 
-
-<div class="container mt-4">
-    <div class="dashboard-header">
-        <h3 style="color: black;">Dashboard</h3>
-        <div class="total-balance">
-            Total Balance: @totalBalance
+<div class="dashboard">
+    <!-- Summary Cards -->
+    <div class="card balance-card">
+        <h4>Balance</h4>
+        <p>@Balance.ToString("C")</p>
+    </div>
+    <div class="summary-cards">
+        <div class="card inflow-card">
+            <h4>Total Inflows</h4>
+            <p>@TotalIncome.ToString("C")</p>
+        </div>
+        <div class="card outflow-card">
+            <h4>Total Outflows</h4>
+            <p>@TotalExpense.ToString("C")</p>
+        </div>
+        <div class="card debt-card">
+            <h4>Debt</h4>
+            <p>@TotalDebt.ToString("C")</p>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <div class="dashboard-card bg-success text-white text-center">
-                <h5>Total Inflows</h5>
-                <h2>@totalIncome</h2>
-            </div>
+    <!-- Tables -->
+    <div class="tables-container">
+        <div class="table inflow-table">
+            <h4>Inflow Transactions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in InflowTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.Description</td>
+                            <td>@transaction.Date.ToShortDateString()</td>
+                            <td>@transaction.Amount.ToString("C")</td>
+                            <td>@transaction.Category</td>
+                            <td>@transaction.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-4">
-            <div class="dashboard-card bg-danger text-white text-center">
-                <h5>Total Outflows</h5>
-                <h2>@totalExpense</h2>
-            </div>
+
+        <div class="table outflow-table">
+            <h4>Outflow Transactions</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in OutflowTransactions)
+                    {
+                        <tr>
+                            <td>@transaction.Description</td>
+                            <td>@transaction.Date.ToShortDateString()</td>
+                            <td>@transaction.Amount.ToString("C")</td>
+                            <td>@transaction.Category</td>
+                            <td>@transaction.Notes</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-        <div class="col-md-4">
-            <div class="dashboard-card bg-warning text-center">
-                <h5>Total Debt</h5>
-                <h2>@totalDebt</h2>
-            </div>
-        </div>
+    </div>
+    <!-- Pending Debts Table -->
+    <div class="table debt-table">
+        <h4>Pending Debts</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var debt in PendingDebts)
+                {
+                    <tr>
+                        <td>@debt.DebtDescription</td>
+                        <td>@debt.DebtAmount.ToString("C")</td>
+                        <td>@debt.DebtCategory</td>
+                        <td>@debt.DueDate.ToShortDateString()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 
-    <div class="chart-container" style="width: 100%; margin: 0; padding: 0;">
-        <h3 style="text-align: center; margin-bottom: 20px;">Bar Graph</h3>
-        <MudChart ChartType="ChartType.Bar"
-                  ChartSeries="@Series"
-                  @bind-SelectedIndex="Index"
-                  XAxisLabels="@XAxisLabels"
-                  Width="100%"
-                  Height="400px"
-                  Style="width: 100%;"
-        >
-        </MudChart>
-    </div>
 </div>
 
 @code {
-    private int Index = -1;
+    private decimal TotalIncome;
+    private decimal TotalExpense;
+    private decimal TotalDebt;
+    private decimal Balance;
 
-    public List<ChartSeries> Series = new List<ChartSeries>()
-    {
-        new ChartSeries() { Name = "Income", Data = new double[] { 40, 20, 25, 27, 46, 60, 48, 80, 15, 12, 11, 20 } },
-        new ChartSeries() { Name = "Expense", Data = new double[] { 19, 24, 35, 13, 28, 15, 13, 16, 31, 15, 19, 24 } },
-    };
-    public string[] XAxisLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    private List<FinancialTransaction> InflowTransactions = new();
+    private List<FinancialTransaction> OutflowTransactions = new();
+    private List<ExpenseTracker.Models.Debt> PendingDebts = new();
 
-    private decimal totalBalance;
-    private decimal totalIncome;
-    private decimal totalExpense;
-    private decimal totalDebt;
 
     protected override async Task OnInitializedAsync()
     {
-        // Fetch totals from the respective services
-        totalIncome = await transactionService.GetTotalIncomeAsync();
-        totalExpense = await transactionService.GetTotalExpenseAsync();
-        totalDebt = await debtService.GetTotalUnpaidDebtAsync();
+        // Load transactions
+        var transactions = await transactionService.GetTransactionsAsync();
 
-        // Calculate total balance
-        totalBalance = totalIncome - totalExpense - totalDebt;
+        // Filter inflow and outflow transactions
+        InflowTransactions = transactions.Where(t => t.Type == "Income").ToList();
+        OutflowTransactions = transactions.Where(t => t.Type == "Expense").ToList();
+
+        // Fetch and filter debts
+        var allDebts = await debtService.GetDebtsAsync();
+        PendingDebts = allDebts.Where(d => !d.IsPaid).ToList();
+
+        // Calculate totals
+        TotalIncome = await transactionService.GetTotalIncomeAsync();
+        TotalExpense = await transactionService.GetTotalExpenseAsync();
+        TotalDebt = await debtService.GetTotalUnpaidDebtAsync();
+        Balance = TotalIncome + TotalDebt - TotalExpense;
     }
 }
