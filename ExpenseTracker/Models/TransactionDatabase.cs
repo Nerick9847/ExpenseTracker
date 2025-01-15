@@ -33,7 +33,7 @@ public static class TransactionDatabase
             var json = await File.ReadAllTextAsync(FilePath);
             return JsonSerializer.Deserialize<DatabaseModel>(json) ?? new DatabaseModel();
         }
-        return new DatabaseModel();
+        return new DatabaseModel(); 
     }
 
     public static async Task SaveDatabaseAsync(DatabaseModel database)

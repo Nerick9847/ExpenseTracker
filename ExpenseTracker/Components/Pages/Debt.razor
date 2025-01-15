@@ -1,0 +1,225 @@
+@page "/debt"
+@inject ExpenseTracker.Services.DebtService DebtService
+
+<div class="dashboard-header">
+    <h3>Debt Management</h3>
+    <div class="buttons-container">
+        <button class="btn btn-primary" @onclick="ShowAddDebtModal">Add New Debt</button>
+    </div>
+</div>
+
+<!-- Debt List -->
+@if (debts == null)
+{
+    <p><em>Loading debts...</em></p>
+}
+else if (!debts.Any())
+{
+    <p>No debts found.</p>
+}
+else
+{
+    <table class="table transaction-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Category</th>
+                <th>Due Date</th>
+                <th>Is Paid</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var debt in debts)
+            {
+                <tr>
+                    <td>@debt.DebtDescription</td>
+                    <td>@debt.DebtType</td>
+                    <td>@debt.DebtAmount</td>
+                    <td>@debt.DebtCategory</td>
+                    <td>@debt.DueDate.ToShortDateString()</td>
+                    <td>@(debt.IsPaid ? "Yes" : "No")</td>
+                    <td>
+                        <button class="btn btn-warning" @onclick="() => ShowEditDebtModal(debt)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteDebtAsync(debt.DebtId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Add/Edit Debt Modal -->
+@if (isModalVisible)
+{
+    <div class="modal">
+        <div class="modal-content">
+            <h4>@(isEditMode ? "Edit Debt" : "Add New Debt")</h4>
+            <EditForm Model="currentDebt" OnValidSubmit="SaveDebtAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-control">
+                    <label for="debtDescription">Description:</label>
+                    <InputText id="debtDescription" @bind-Value="currentDebt.DebtDescription" />
+                </div>
+                <div class="form-control">
+                    <label for="debtType">Type:</label>
+                    <InputText id="debtType" @bind-Value="currentDebt.DebtType" />
+                </div>
+                <div class="form-control">
+                    <label for="debtAmount">Amount:</label>
+                    <InputNumber id="debtAmount" @bind-Value="currentDebt.DebtAmount" />
+                </div>
+                <div class="form-control">
+                    <label for="debtCategory">Category:</label>
+                    <InputText id="debtCategory" @bind-Value="currentDebt.DebtCategory" />
+                </div>
+                <div class="form-control">
+                    <label for="dueDate">Due Date:</label>
+                    <InputDate id="dueDate" @bind-Value="currentDebt.DueDate" />
+                </div>
+                <div class="form-control">
+                    <label for="isPaid">Is Paid:</label>
+                    <InputCheckbox id="isPaid" @bind-Value="currentDebt.IsPaid" />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="CloseModal">Cancel</button>
+                    <button class="btn btn-primary" type="submit">@("Save")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .buttons-container {
+        display: flex;
+        gap: 10px;
+    }
+
+    .filter-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .form-control {
+        width: 150px;
+        margin-bottom: 10px;
+    }
+
+    .btn-primary {
+        border-radius: 8px;
+    }
+
+    .btn-secondary {
+        border-radius: 8px;
+    }
+
+    .transaction-table th {
+        background-color: #f8f9fa;
+    }
+
+    .transaction-table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .btn-warning {
+        background-color: #96d6b2;
+    }
+
+    .btn-danger {
+        background-color: #800112;
+    }
+
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+
+@code {
+    private List<ExpenseTracker.Models.Debt> debts;
+    private ExpenseTracker.Models.Debt currentDebt = new ExpenseTracker.Models.Debt();
+    private bool isModalVisible = false;
+    private bool isEditMode = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDebtsAsync();
+    }
+
+    private async Task LoadDebtsAsync()
+    {
+        debts = await DebtService.GetDebtsAsync();
+    }
+
+    private void ShowAddDebtModal()
+    {
+        currentDebt = new ExpenseTracker.Models.Debt();
+        isEditMode = false;
+        isModalVisible = true;
+    }
+
+    private void ShowEditDebtModal(ExpenseTracker.Models.Debt debt)
+    {
+        currentDebt = debt;
+        isEditMode = true;
+        isModalVisible = true;
+    }
+
+    private void CloseModal()
+    {
+        isModalVisible = false;
+    }
+
+    private async Task SaveDebtAsync()
+    {
+        if (isEditMode)
+        {
+            await DebtService.UpdateDebtAsync(currentDebt);
+        }
+        else
+        {
+            await DebtService.AddDebtAsync(currentDebt);
+        }
+
+        CloseModal();
+        await LoadDebtsAsync();
+    }
+
+    private async Task DeleteDebtAsync(Guid debtId)
+    {
+        await DebtService.DeleteDebtAsync(debtId);
+        await LoadDebtsAsync();
+    }
+}
