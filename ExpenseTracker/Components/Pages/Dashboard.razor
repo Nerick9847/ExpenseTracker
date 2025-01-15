@@ -1,6 +1,7 @@
 ﻿@page "/dashboard"
 @using ExpenseTracker.Services
 @inject TransactionService transactionService
+@inject DebtService debtService
 
 <style>
     .dashboard-card {
@@ -73,13 +74,14 @@
                   XAxisLabels="@XAxisLabels"
                   Width="100%"
                   Height="400px"
-                  Style="width: 100%;">
+                  Style="width: 100%;"
+        >
         </MudChart>
     </div>
 </div>
 
 @code {
-    private int Index = -1; // Default value cannot be 0 -> first SelectedIndex is 0.
+    private int Index = -1;
 
     public List<ChartSeries> Series = new List<ChartSeries>()
     {
@@ -93,15 +95,14 @@
     private decimal totalExpense;
     private decimal totalDebt;
 
-    // Use async Task OnInitializedAsync for async initialization
     protected override async Task OnInitializedAsync()
     {
-        // Fetch totals from the TransactionService asynchronously
+        // Fetch totals from the respective services
         totalIncome = await transactionService.GetTotalIncomeAsync();
         totalExpense = await transactionService.GetTotalExpenseAsync();
-        totalDebt = await transactionService.GetTotalDebtAsync();
+        totalDebt = await debtService.GetTotalUnpaidDebtAsync();
 
-        // Calculate the total balance
-        totalBalance = totalIncome + totalDebt - totalExpense;
+        // Calculate total balance
+        totalBalance = totalIncome - totalExpense - totalDebt;
     }
 }

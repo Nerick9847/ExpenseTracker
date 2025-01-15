@@ -59,5 +59,11 @@ namespace ExpenseTracker.Services
                 await DebtDatabase.SaveDatabaseAsync(database);
             }
         }
+
+        public async Task<decimal> GetTotalUnpaidDebtAsync()
+        {
+            var database = await DebtDatabase.LoadDatabaseAsync();
+            return database.Debts.Where(d => !d.IsPaid).Sum(d => d.DebtAmount);
+        }
     }
 }
