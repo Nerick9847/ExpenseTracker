@@ -17,6 +17,7 @@ namespace ExpenseTracker.Services
         public async Task AddDebtAsync(Debt debt)
         {
             var database = await DebtDatabase.LoadDatabaseAsync();
+            debt.WhenAdded = DateTime.Now; // Set the "When Added" date when the debt is added
             database.Debts.Add(debt);
             await DebtDatabase.SaveDatabaseAsync(database);
         }
@@ -33,6 +34,7 @@ namespace ExpenseTracker.Services
                 debt.DebtCategory = updatedDebt.DebtCategory;
                 debt.DueDate = updatedDebt.DueDate;
                 debt.IsPaid = updatedDebt.IsPaid;
+                debt.WhenAdded = updatedDebt.WhenAdded; 
             }
             await DebtDatabase.SaveDatabaseAsync(database);
         }

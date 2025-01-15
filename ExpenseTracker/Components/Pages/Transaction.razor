@@ -81,11 +81,11 @@
     </div>
 
     <div class="filter-container">
+        <input type="text" class="form-control" @bind="descriptionFilter" placeholder="Search by Description" />
         <select class="form-control" @bind="selectedType">
             <option value="">Select Type</option>
             <option value="Income">Income</option>
             <option value="Expense">Expense</option>
-            <option value="Debt">Debt</option>
         </select>
         <select class="form-control" @bind="selectedCategory">
             <option value="">Select Category</option>
@@ -98,8 +98,9 @@
         <input type="date" class="form-control" @bind="endDate" />
         <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+        <button class="btn btn-info" @onclick="ToggleSort">Sort by Date @(isSortedAscending ? "Ascending" : "Descending")</button>
     </div>
-</div> 
+</div>
 
 <table class="table transaction-table">
     <thead>
@@ -205,9 +206,11 @@
     private string modalTitle = "Add Transaction";
     private string selectedType = string.Empty;
     private string selectedCategory = string.Empty;
-    private DateTime startDate = DateTime.MinValue;
-    private DateTime endDate = DateTime.MaxValue;
+    private string descriptionFilter = string.Empty;
+    private DateTime startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private DateTime endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
     private List<FinancialTransaction> filteredTransactions = new();
+    private bool isSortedAscending = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -279,18 +282,37 @@
     private void FilterTransactions()
     {
         filteredTransactions = database.Transactions
-            .Where(t => (string.IsNullOrEmpty(selectedType) || t.Type.Equals(selectedType, StringComparison.OrdinalIgnoreCase)) &&
-                        (string.IsNullOrEmpty(selectedCategory) || (t.Category != null && t.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase))) &&
-                        (t.Date >= startDate && t.Date <= endDate))
-            .ToList();
+                .Where(t => (string.IsNullOrEmpty(selectedType) ||
+                 (!string.IsNullOrEmpty(t.Type) && t.Type.Equals(selectedType, StringComparison.OrdinalIgnoreCase))) &&
+                (string.IsNullOrEmpty(selectedCategory) ||
+                 (!string.IsNullOrEmpty(t.Category) && t.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase))) &&
+                (t.Date != null && t.Date >= startDate && t.Date <= endDate) &&
+                (string.IsNullOrEmpty(descriptionFilter) || t.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+        if (isSortedAscending)
+        {
+            filteredTransactions = filteredTransactions.OrderBy(t => t.Date).ToList();
+        }
+        else
+        {
+            filteredTransactions = filteredTransactions.OrderByDescending(t => t.Date).ToList();
+        }
     }
 
     private void ClearFilters()
     {
         selectedType = string.Empty;
         selectedCategory = string.Empty;
+        descriptionFilter = string.Empty; // Clear the description filter
         startDate = DateTime.MinValue;
         endDate = DateTime.MaxValue;
+        FilterTransactions();
+    }
+
+    private void ToggleSort()
+    {
+        isSortedAscending = !isSortedAscending;
         FilterTransactions();
     }
 

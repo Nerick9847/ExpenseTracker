@@ -15,6 +15,8 @@ namespace ExpenseTracker.Models
         public string DebtCategory { get; set; }
         public DateTime DueDate { get; set; }
         public bool IsPaid { get; set; }
+
+        public DateTime WhenAdded { get; set; }
     }
 
     public class DebtDatabaseModel

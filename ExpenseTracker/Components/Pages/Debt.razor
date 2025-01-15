@@ -8,6 +8,34 @@
     </div>
 </div>
 
+<!-- Filter by Payment Status, Description, Type, Category, and Date -->
+<div class="filter-container">
+    <select class="form-control" @bind="filterStatus">
+        <option value="">Filter by Status</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+    </select>
+    <input type="text" class="form-control" placeholder="Search by Description" @bind="filterDescription" />
+    <select class="form-control" @bind="filterType">
+        <option value="">Select Type</option>
+        <option value="Income">Income</option>
+        <option value="Expense">Expense</option>
+        <option value="Debt">Debt</option>
+    </select>
+    <select class="form-control" @bind="filterCategory">
+        <option value="">Select Category</option>
+        @foreach (var category in categories)
+        {
+            <option value="@category">@category</option>
+        }
+    </select>
+    <input type="date" class="form-control" @bind="startDate" />
+    <input type="date" class="form-control" @bind="endDate" />
+    <button class="btn btn-primary" @onclick="ApplyFilter">Apply Filter</button>
+    <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+    <button class="btn btn-info" @onclick="ToggleSort">Sort by Date @(isSortedAscending ? "Ascending" : "Descending")</button>
+</div>
+
 <!-- Debt List -->
 @if (debts == null)
 {
@@ -28,11 +56,12 @@ else
                 <th>Category</th>
                 <th>Due Date</th>
                 <th>Is Paid</th>
+                <th>When Added</th> <!-- Add this column here -->
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var debt in debts)
+            @foreach (var debt in filteredDebts)
             {
                 <tr>
                     <td>@debt.DebtDescription</td>
@@ -41,6 +70,7 @@ else
                     <td>@debt.DebtCategory</td>
                     <td>@debt.DueDate.ToShortDateString()</td>
                     <td>@(debt.IsPaid ? "Yes" : "No")</td>
+                    <td>@debt.WhenAdded.ToShortDateString()</td> <!-- Display When Added -->
                     <td>
                         <button class="btn btn-warning" @onclick="() => ShowEditDebtModal(debt)">Edit</button>
                         <button class="btn btn-danger" @onclick="() => DeleteDebtAsync(debt.DebtId)">Delete</button>
@@ -84,6 +114,11 @@ else
                     <label for="isPaid">Is Paid:</label>
                     <InputCheckbox id="isPaid" @bind-Value="currentDebt.IsPaid" />
                 </div>
+                <div class="form-control">
+                    <label for="WhenAdded">When Added</label>
+                    <InputDate id="whenAdded" @bind-Value="currentDebt.WhenAdded" />
+                </div>
+
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" @onclick="CloseModal">Cancel</button>
                     <button class="btn btn-primary" type="submit">@("Save")</button>
@@ -169,13 +204,23 @@ else
 
 @code {
     private List<ExpenseTracker.Models.Debt> debts;
+    private List<ExpenseTracker.Models.Debt> filteredDebts;
     private ExpenseTracker.Models.Debt currentDebt = new ExpenseTracker.Models.Debt();
     private bool isModalVisible = false;
     private bool isEditMode = false;
+    private string filterStatus = "";
+    private string filterDescription = "";
+    private string filterType = "";
+    private string filterCategory = "";
+    private DateTime startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private DateTime endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+    private List<string> categories = new List<string> { "Personal", "Business", "Student Loan", "Home Loan" };
+    private bool isSortedAscending = true;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDebtsAsync();
+        filteredDebts = debts; // Initialize with all debts
     }
 
     private async Task LoadDebtsAsync()
@@ -183,43 +228,73 @@ else
         debts = await DebtService.GetDebtsAsync();
     }
 
+    private void ApplyFilter()
+    {
+        filteredDebts = debts.Where(d =>
+            (string.IsNullOrEmpty(filterStatus) || (filterStatus == "paid" && d.IsPaid) || (filterStatus == "pending" && !d.IsPaid)) &&
+            (string.IsNullOrEmpty(filterDescription) || (!string.IsNullOrEmpty(d.DebtDescription) && d.DebtDescription.Contains(filterDescription, StringComparison.OrdinalIgnoreCase))) &&
+            (string.IsNullOrEmpty(filterType) || (!string.IsNullOrEmpty(d.DebtType) && d.DebtType.Equals(filterType, StringComparison.OrdinalIgnoreCase))) &&
+            (string.IsNullOrEmpty(filterCategory) || (!string.IsNullOrEmpty(d.DebtCategory) && d.DebtCategory.Equals(filterCategory, StringComparison.OrdinalIgnoreCase))) &&
+            (d.DueDate != null && d.DueDate >= startDate && d.DueDate <= endDate)
+        ).ToList();
+    }
+
+    private void ClearFilters()
+    {
+        filterStatus = "";
+        filterDescription = "";
+        filterType = "";
+        filterCategory = "";
+        startDate = DateTime.MinValue;
+        endDate = DateTime.MaxValue;
+        ApplyFilter();
+    }
+
     private void ShowAddDebtModal()
     {
-        currentDebt = new ExpenseTracker.Models.Debt();
-        isEditMode = false;
-        isModalVisible = true;
+        currentDebt = new ExpenseTracker.Models.Debt(); // Create a new debt object for adding
+        isEditMode = false; // Set to add mode
+        isModalVisible = true; // Show the modal
     }
 
     private void ShowEditDebtModal(ExpenseTracker.Models.Debt debt)
     {
-        currentDebt = debt;
-        isEditMode = true;
-        isModalVisible = true;
+        currentDebt = debt; // Set the selected debt for editing
+        isEditMode = true; // Set to edit mode
+        isModalVisible = true; // Show the modal
     }
 
     private void CloseModal()
     {
-        isModalVisible = false;
+        isModalVisible = false; // Close the modal
+    }
+
+    private void ToggleSort()
+    {
+        isSortedAscending = !isSortedAscending;
+        ApplyFilter();
     }
 
     private async Task SaveDebtAsync()
     {
         if (isEditMode)
         {
-            await DebtService.UpdateDebtAsync(currentDebt);
+            await DebtService.UpdateDebtAsync(currentDebt); // Update existing debt
         }
         else
         {
-            await DebtService.AddDebtAsync(currentDebt);
+            await DebtService.AddDebtAsync(currentDebt); // Add new debt
         }
 
         CloseModal();
-        await LoadDebtsAsync();
+        await LoadDebtsAsync(); // Reload the debts after saving
+        ApplyFilter(); // Reapply filters after save
     }
 
     private async Task DeleteDebtAsync(Guid debtId)
     {
-        await DebtService.DeleteDebtAsync(debtId);
-        await LoadDebtsAsync();
+        await DebtService.DeleteDebtAsync(debtId); // Delete the selected debt
+        await LoadDebtsAsync(); // Reload the debts after delete
+        ApplyFilter(); // Reapply filters after deletion
     }
 }
