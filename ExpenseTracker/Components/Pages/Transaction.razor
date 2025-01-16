@@ -6,47 +6,105 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        border-bottom: 2px solid #d3d3d3;
+        padding-bottom: 10px;
     }
 
     .buttons-container {
         display: flex;
-        gap: 10px;
+        gap: 15px;
     }
 
     .filter-container {
         display: flex;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 15px;
         align-items: center;
+        margin-bottom: 20px;
     }
 
     .form-control {
-        width: 150px;
-        margin-bottom: 10px;
+        width: 200px;
+        padding: 5px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: 1px solid #bbb;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+        color: #333;
     }
 
+        .form-control:hover {
+            border-color: #999;
+        }
+
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 8px 15px;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+
+        .btn:hover {
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
     .btn-primary {
-        border-radius: 8px;
+        background-color: #007bff;
+        color: white;
     }
 
     .btn-secondary {
-        border-radius: 8px;
+        background-color: #6c757d;
+        color: white;
     }
 
-    .transaction-table th {
-        background-color: #f8f9fa;
-    }
-
-    .transaction-table tbody tr:hover {
-        background-color: #f1f1f1;
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
     }
 
     .btn-warning {
-        background-color: #96d6b2;
+        background-color: #ffc107;
+        color: black;
     }
 
     .btn-danger {
-        background-color: #800112;
+        background-color: #dc3545;
+        color: white;
     }
+
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background-color: #fff;
+        color: #333;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    }
+
+        .transaction-table th, .transaction-table td {
+            border: 1px solid #d3d3d3;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .transaction-table th {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .transaction-table tbody tr:hover {
+            background-color: #f0f0f0;
+        }
 
     .modal {
         position: fixed;
@@ -61,16 +119,24 @@
     }
 
     .modal-content {
-        background: white;
+        background: #f9f9f9;
         padding: 20px;
         border-radius: 8px;
         max-width: 500px;
         width: 100%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
     .modal-footer {
         display: flex;
         justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .date-range {
+        display: flex;
+        gap: 10px;
+        align-items: center;
     }
 </style>
 
@@ -78,39 +144,46 @@
     <div class="buttons-container">
         <button class="btn btn-primary" @onclick="OpenAddModal">Add Transaction</button>
         <button class="btn btn-secondary" @onclick="OpenCategoryModal">Add Category</button>
-    </div>
-
-    <div class="filter-container">
-        <input type="text" class="form-control" @bind="descriptionFilter" placeholder="Search by Description" />
-        <select class="form-control" @bind="selectedType">
-            <option value="">Select Type</option>
-            <option value="Income">Income</option>
-            <option value="Expense">Expense</option>
-        </select>
-        <select class="form-control" @bind="selectedCategory">
-            <option value="">Select Category</option>
-            @foreach (var category in database.Categories)
-            {
-                <option value="@category">@category</option>
-            }
-        </select>
-        <input type="date" class="form-control" @bind="startDate" />
-        <input type="date" class="form-control" @bind="endDate" />
-        <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
-        <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-        <button class="btn btn-info" @onclick="ToggleSort">Sort by Date @(isSortedAscending ? "Ascending" : "Descending")</button>
+        <button class="btn btn-info" @onclick="ExportTransactions">Export</button>
     </div>
 </div>
 
-<table class="table transaction-table">
+<div class="filter-container">
+    <input type="text" class="form-control" @bind="descriptionFilter" placeholder="Search by Description" />
+    <select class="form-control" @bind="selectedType">
+        <option value="">Select Type</option>
+        <option value="Income">Income</option>
+        <option value="Expense">Expense</option>
+    </select>
+    <select class="form-control" @bind="selectedCategory">
+        <option value="">Select Category</option>
+        @foreach (var category in database.Categories)
+        {
+            <option value="@category">@category</option>
+        }
+    </select>
+    <div class="date-range">
+        <label>Start Date:</label>
+        <input type="date" class="form-control" @bind="startDate" />
+        <label>End Date:</label>
+        <input type="date" class="form-control" @bind="endDate" />
+    </div>
+    <div class="filter-buttons">
+        <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
+        <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+        <button class="btn btn-info" @onclick="ToggleSort">Sort by Amount @(isSortedAscending ? "Ascending" : "Descending")</button>
+    </div>
+</div>
+
+<table class="transaction-table">
     <thead>
         <tr>
             <th>Description</th>
-            <th>Notes</th>
             <th>Date</th>
             <th>Amount</th>
             <th>Type</th>
             <th>Category</th>
+            <th>Notes</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -119,11 +192,11 @@
         {
             <tr>
                 <td>@transaction.Description</td>
-                <td>@transaction.Notes</td>
                 <td>@transaction.Date.ToString("yyyy-MM-dd")</td>
                 <td>@transaction.Amount.ToString("C")</td>
                 <td class="@(transaction.Type == "Income" ? "text-success" : "text-danger")">@transaction.Type</td>
                 <td>@(string.IsNullOrEmpty(transaction.Category) ? "Uncategorized" : transaction.Category)</td>
+                <td>@transaction.Notes</td>
                 <td>
                     <button class="btn btn-warning" @onclick="() => OpenEditModal(transaction)">Edit</button>
                     <button class="btn btn-danger" @onclick="() => DeleteTransaction(transaction)">Delete</button>
@@ -141,10 +214,6 @@
             <div>
                 <label>Description:</label>
                 <input type="text" class="form-control" @bind="transactionModel.Description" />
-            </div>
-            <div>
-                <label>Notes:</label>
-                <input type="text" class="form-control" @bind="transactionModel.Notes" />
             </div>
             <div>
                 <label>Date:</label>
@@ -171,6 +240,10 @@
                         <option value="@category">@category</option>
                     }
                 </select>
+            </div>
+            <div>
+                <label>Notes:</label>
+                <input type="text" class="form-control" @bind="transactionModel.Notes" />
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" @onclick="CloseTransactionModal">Cancel</button>
@@ -207,8 +280,8 @@
     private string selectedType = string.Empty;
     private string selectedCategory = string.Empty;
     private string descriptionFilter = string.Empty;
-    private DateTime startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-    private DateTime endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
     private List<FinancialTransaction> filteredTransactions = new();
     private bool isSortedAscending = true;
 
@@ -267,46 +340,30 @@
             }
         }
 
-        FilterTransactions();
         await TransactionDatabase.SaveDatabaseAsync(database);
+        FilterTransactions();
         CloseTransactionModal();
-    }
-
-    private async Task DeleteTransaction(FinancialTransaction transaction)
-    {
-        database.Transactions.Remove(transaction);
-        await TransactionDatabase.SaveDatabaseAsync(database);
-        FilterTransactions();
     }
 
     private void FilterTransactions()
     {
         filteredTransactions = database.Transactions
-                .Where(t => (string.IsNullOrEmpty(selectedType) ||
-                 (!string.IsNullOrEmpty(t.Type) && t.Type.Equals(selectedType, StringComparison.OrdinalIgnoreCase))) &&
-                (string.IsNullOrEmpty(selectedCategory) ||
-                 (!string.IsNullOrEmpty(t.Category) && t.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase))) &&
-                (t.Date != null && t.Date >= startDate && t.Date <= endDate) &&
-                (string.IsNullOrEmpty(descriptionFilter) || t.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
-
-        if (isSortedAscending)
-        {
-            filteredTransactions = filteredTransactions.OrderBy(t => t.Date).ToList();
-        }
-        else
-        {
-            filteredTransactions = filteredTransactions.OrderByDescending(t => t.Date).ToList();
-        }
+            .Where(t => (string.IsNullOrEmpty(descriptionFilter) || t.Description.Contains(descriptionFilter, StringComparison.OrdinalIgnoreCase))
+                && (string.IsNullOrEmpty(selectedType) || t.Type == selectedType)
+                && (string.IsNullOrEmpty(selectedCategory) || t.Category == selectedCategory)
+                && (!startDate.HasValue || (!endDate.HasValue && t.Date.Date == startDate.Value.Date) || (endDate.HasValue && t.Date.Date >= startDate.Value.Date && t.Date.Date <= endDate.Value.Date)))
+            .OrderBy(t => isSortedAscending ? t.Amount : -t.Amount)
+            .ToList();
     }
 
     private void ClearFilters()
     {
+        descriptionFilter = string.Empty;
         selectedType = string.Empty;
         selectedCategory = string.Empty;
-        descriptionFilter = string.Empty; // Clear the description filter
-        startDate = DateTime.MinValue;
-        endDate = DateTime.MaxValue;
+        startDate = null;
+        endDate = null;
+        isSortedAscending = true;
         FilterTransactions();
     }
 
@@ -318,7 +375,6 @@
 
     private void OpenCategoryModal()
     {
-        newCategory = string.Empty;
         showCategoryModal = true;
     }
 
@@ -329,12 +385,32 @@
 
     private async Task AddCategory()
     {
-        if (!string.IsNullOrWhiteSpace(newCategory) && !database.Categories.Contains(newCategory))
+        if (!string.IsNullOrEmpty(newCategory) && !database.Categories.Contains(newCategory))
         {
             database.Categories.Add(newCategory);
             await TransactionDatabase.SaveDatabaseAsync(database);
         }
-
+        newCategory = string.Empty;
         CloseCategoryModal();
+    }
+
+    private void DeleteTransaction(FinancialTransaction transaction)
+    {
+        database.Transactions.Remove(transaction);
+        TransactionDatabase.SaveDatabaseAsync(database);
+        FilterTransactions();
+    }
+
+    private void ExportTransactions()
+    {
+        var transactionsToExport = filteredTransactions.Select(t => new
+        {
+            t.Description,
+            t.Notes,
+            Date = t.Date.ToString("yyyy-MM-dd"),
+            Amount = t.Amount.ToString("C"),
+            t.Type,
+            t.Category
+        }).ToList();
     }
 }

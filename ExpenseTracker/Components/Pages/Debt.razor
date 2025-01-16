@@ -2,225 +2,163 @@
 @inject ExpenseTracker.Services.DebtService DebtService
 
 <div class="dashboard-header">
-    <h3>Debt Management</h3>
     <div class="buttons-container">
-        <button class="btn btn-primary" @onclick="ShowAddDebtModal">Add New Debt</button>
+        <button class="btn btn-primary" @onclick="ShowAddDebtModal">Add Debt</button>
+        <button class="btn btn-info" @onclick="ExportDebts">Export</button>
     </div>
 </div>
 
-<!-- Filter by Payment Status, Description, Type, Category, and Date -->
 <div class="filter-container">
-    <select class="form-control" @bind="filterStatus">
-        <option value="">Filter by Status</option>
-        <option value="paid">Paid</option>
-        <option value="pending">Pending</option>
-    </select>
-    <input type="text" class="form-control" placeholder="Search by Description" @bind="filterDescription" />
-    <select class="form-control" @bind="filterType">
-        <option value="">Select Type</option>
-        <option value="Income">Income</option>
-        <option value="Expense">Expense</option>
-        <option value="Debt">Debt</option>
-    </select>
-    <select class="form-control" @bind="filterCategory">
+    <input type="text" class="form-control" @bind="filterDescription" @bind:after="ApplyFilter" placeholder="Search by Description" />
+    <select class="form-control" @bind="filterCategory" @bind:after="ApplyFilter">
         <option value="">Select Category</option>
         @foreach (var category in categories)
         {
             <option value="@category">@category</option>
         }
     </select>
-    <input type="date" class="form-control" @bind="startDate" />
-    <input type="date" class="form-control" @bind="endDate" />
-    <button class="btn btn-primary" @onclick="ApplyFilter">Apply Filter</button>
-    <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-    <button class="btn btn-info" @onclick="ToggleSort">Sort by Date @(isSortedAscending ? "Ascending" : "Descending")</button>
+    <select class="form-control" @bind="filterType" @bind:after="ApplyFilter">
+        <option value="">Select Type</option>
+        <option value="Personal">Personal</option>
+        <option value="Business">Business</option>
+        <option value="Student Loan">Student Loan</option>
+        <option value="Home Loan">Home Loan</option>
+    </select>
+    <select class="form-control" @bind="filterIsPaid" @bind:after="ApplyFilter">
+        <option value="">Select Payment Status</option>
+        <option value="true">Paid</option>
+        <option value="false">Pending</option>
+    </select>
+    <div class="date-range">
+        <label>Start Date:</label>
+        <input type="date" class="form-control" @bind="startDate" @bind:after="ApplyFilter" />
+        <label>End Date:</label>
+        <input type="date" class="form-control" @bind="endDate" @bind:after="ApplyFilter" />
+    </div>
+    <div class="filter-buttons">
+        <button class="btn btn-primary" @onclick="ApplyFilter">Filter</button>
+        <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+        <button class="btn btn-info" @onclick="ToggleSort">Sort by Amount @(isSortedAscending ? "Ascending" : "Descending")</button>
+    </div>
 </div>
 
-<!-- Debt List -->
-@if (debts == null)
-{
-    <p><em>Loading debts...</em></p>
-}
-else if (!debts.Any())
-{
-    <p>No debts found.</p>
-}
-else
-{
-    <table class="table transaction-table">
-        <thead>
+<table class="transaction-table">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Due Date</th>
+            <th>Is Paid</th>
+            <th>When Added</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var debt in filteredDebts)
+        {
             <tr>
-                <th>Description</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Category</th>
-                <th>Due Date</th>
-                <th>Is Paid</th>
-                <th>When Added</th> <!-- Add this column here -->
-                <th>Actions</th>
+                <td>@debt.DebtDescription</td>
+                <td>@debt.DebtType</td>
+                <td>@debt.DebtAmount.ToString("C")</td>
+                <td>@debt.DebtCategory</td>
+                <td>@debt.DueDate.ToShortDateString()</td>
+                <td>@(debt.IsPaid ? "Yes" : "No")</td>
+                <td>@debt.WhenAdded.ToShortDateString()</td>
+                <td>
+                    <button class="btn btn-warning" @onclick="() => ShowEditDebtModal(debt)">Edit</button>
+                    <button class="btn btn-danger" @onclick="() => DeleteDebtAsync(debt.DebtId)">Delete</button>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var debt in filteredDebts)
-            {
-                <tr>
-                    <td>@debt.DebtDescription</td>
-                    <td>@debt.DebtType</td>
-                    <td>@debt.DebtAmount</td>
-                    <td>@debt.DebtCategory</td>
-                    <td>@debt.DueDate.ToShortDateString()</td>
-                    <td>@(debt.IsPaid ? "Yes" : "No")</td>
-                    <td>@debt.WhenAdded.ToShortDateString()</td> <!-- Display When Added -->
-                    <td>
-                        <button class="btn btn-warning" @onclick="() => ShowEditDebtModal(debt)">Edit</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteDebtAsync(debt.DebtId)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+        }
+    </tbody>
+</table>
 
-<!-- Add/Edit Debt Modal -->
 @if (isModalVisible)
 {
     <div class="modal">
         <div class="modal-content">
-            <h4>@(isEditMode ? "Edit Debt" : "Add New Debt")</h4>
+            <h2>@(isEditMode ? "Edit Debt" : "Add New Debt")</h2>
             <EditForm Model="currentDebt" OnValidSubmit="SaveDebtAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-                <div class="form-control">
-                    <label for="debtDescription">Description:</label>
-                    <InputText id="debtDescription" @bind-Value="currentDebt.DebtDescription" />
+
+                <div>
+                    <label>Description:</label>
+                    <InputText class="form-control" @bind-Value="currentDebt.DebtDescription" />
                 </div>
-                <div class="form-control">
-                    <label for="debtType">Type:</label>
-                    <InputText id="debtType" @bind-Value="currentDebt.DebtType" />
+
+                <div>
+                    <label>Type:</label>
+                    <InputSelect class="form-control" @bind-Value="currentDebt.DebtType">
+                        <option value="">Select Type</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Business">Business</option>
+                        <option value="Student Loan">Student Loan</option>
+                        <option value="Home Loan">Home Loan</option>
+                    </InputSelect>
                 </div>
-                <div class="form-control">
-                    <label for="debtAmount">Amount:</label>
-                    <InputNumber id="debtAmount" @bind-Value="currentDebt.DebtAmount" />
+
+                <div>
+                    <label>Amount:</label>
+                    <InputNumber class="form-control" @bind-Value="currentDebt.DebtAmount" />
                 </div>
-                <div class="form-control">
-                    <label for="debtCategory">Category:</label>
-                    <InputText id="debtCategory" @bind-Value="currentDebt.DebtCategory" />
+
+                <div>
+                    <label>Category:</label>
+                    <InputSelect class="form-control" @bind-Value="currentDebt.DebtCategory">
+                        <option value="">Select Category</option>
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </InputSelect>
                 </div>
-                <div class="form-control">
-                    <label for="dueDate">Due Date:</label>
-                    <InputDate id="dueDate" @bind-Value="currentDebt.DueDate" />
+
+                <div>
+                    <label>Due Date:</label>
+                    <InputDate class="form-control" @bind-Value="currentDebt.DueDate" />
                 </div>
-                <div class="form-control">
-                    <label for="isPaid">Is Paid:</label>
-                    <InputCheckbox id="isPaid" @bind-Value="currentDebt.IsPaid" />
+
+                <div>
+                    <label>Is Paid:</label>
+                    <InputCheckbox @bind-Value="currentDebt.IsPaid" />
                 </div>
-                <div class="form-control">
-                    <label for="WhenAdded">When Added</label>
-                    <InputDate id="whenAdded" @bind-Value="currentDebt.WhenAdded" />
+
+                <div>
+                    <label>When Added:</label>
+                    <InputDate class="form-control" @bind-Value="currentDebt.WhenAdded" />
                 </div>
 
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" @onclick="CloseModal">Cancel</button>
-                    <button class="btn btn-primary" type="submit">@("Save")</button>
+                    <button class="btn btn-primary" type="submit">Save</button>
                 </div>
             </EditForm>
         </div>
     </div>
 }
 
-<style>
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .buttons-container {
-        display: flex;
-        gap: 10px;
-    }
-
-    .filter-container {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .form-control {
-        width: 150px;
-        margin-bottom: 10px;
-    }
-
-    .btn-primary {
-        border-radius: 8px;
-    }
-
-    .btn-secondary {
-        border-radius: 8px;
-    }
-
-    .transaction-table th {
-        background-color: #f8f9fa;
-    }
-
-    .transaction-table tbody tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    .btn-warning {
-        background-color: #96d6b2;
-    }
-
-    .btn-danger {
-        background-color: #800112;
-    }
-
-    .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .modal-content {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 500px;
-        width: 100%;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-    }
-</style>
-
 @code {
-    private List<ExpenseTracker.Models.Debt> debts;
-    private List<ExpenseTracker.Models.Debt> filteredDebts;
+    private List<ExpenseTracker.Models.Debt> debts = new();
+    private List<ExpenseTracker.Models.Debt> filteredDebts = new();
     private ExpenseTracker.Models.Debt currentDebt = new();
     private bool isModalVisible = false;
     private bool isEditMode = false;
-    private string filterStatus = "";
     private string filterDescription = "";
-    private string filterType = "";
     private string filterCategory = "";
-    private DateTime startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-    private DateTime endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month));
+    private string filterType = "";
+    private bool? filterIsPaid = null;
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
     private List<string> categories = new List<string> { "Personal", "Business", "Student Loan", "Home Loan" };
     private bool isSortedAscending = true;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDebtsAsync();
-        filteredDebts = debts; // Initialize with all debts
+        ApplyFilter();
     }
 
     private async Task LoadDebtsAsync()
@@ -230,43 +168,93 @@ else
 
     private void ApplyFilter()
     {
-        filteredDebts = debts.Where(d =>
-            (string.IsNullOrEmpty(filterStatus) || (filterStatus == "paid" && d.IsPaid) || (filterStatus == "pending" && !d.IsPaid)) &&
-            (string.IsNullOrEmpty(filterDescription) || (!string.IsNullOrEmpty(d.DebtDescription) && d.DebtDescription.Contains(filterDescription, StringComparison.OrdinalIgnoreCase))) &&
-            (string.IsNullOrEmpty(filterType) || (!string.IsNullOrEmpty(d.DebtType) && d.DebtType.Equals(filterType, StringComparison.OrdinalIgnoreCase))) &&
-            (string.IsNullOrEmpty(filterCategory) || (!string.IsNullOrEmpty(d.DebtCategory) && d.DebtCategory.Equals(filterCategory, StringComparison.OrdinalIgnoreCase))) &&
-            (d.DueDate != null && d.DueDate >= startDate && d.DueDate <= endDate)
-        ).ToList();
+        var query = debts.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filterDescription))
+        {
+            query = query.Where(d => d.DebtDescription != null &&
+                d.DebtDescription.Contains(filterDescription, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterCategory))
+        {
+            query = query.Where(d => d.DebtCategory != null &&
+                d.DebtCategory.Equals(filterCategory, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterType))
+        {
+            query = query.Where(d => d.DebtType != null &&
+                d.DebtType.Equals(filterType, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (filterIsPaid.HasValue)
+        {
+            query = query.Where(d => d.IsPaid == filterIsPaid.Value);
+        }
+
+        if (startDate.HasValue)
+        {
+            query = query.Where(d => d.DueDate >= startDate.Value);
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(d => d.DueDate <= endDate.Value);
+        }
+
+        filteredDebts = isSortedAscending
+            ? query.OrderBy(d => d.DebtAmount).ToList()
+            : query.OrderByDescending(d => d.DebtAmount).ToList();
+
+        StateHasChanged();
     }
 
     private void ClearFilters()
     {
-        filterStatus = "";
         filterDescription = "";
-        filterType = "";
         filterCategory = "";
-        startDate = DateTime.MinValue;
-        endDate = DateTime.MaxValue;
+        filterType = "";
+        filterIsPaid = null;
+        startDate = null;
+        endDate = null;
+        isSortedAscending = true;
+
         ApplyFilter();
     }
 
     private void ShowAddDebtModal()
     {
-        currentDebt = new ExpenseTracker.Models.Debt(); // Create a new debt object for adding
-        isEditMode = false; // Set to add mode
-        isModalVisible = true; // Show the modal
+        currentDebt = new ExpenseTracker.Models.Debt
+            {
+                WhenAdded = DateTime.Now,
+                DueDate = DateTime.Now.AddMonths(1)
+            };
+        isEditMode = false;
+        isModalVisible = true;
     }
 
     private void ShowEditDebtModal(ExpenseTracker.Models.Debt debt)
     {
-        currentDebt = debt; // Set the selected debt for editing
-        isEditMode = true; // Set to edit mode
-        isModalVisible = true; // Show the modal
+        currentDebt = new ExpenseTracker.Models.Debt
+            {
+                DebtId = debt.DebtId,
+                DebtDescription = debt.DebtDescription,
+                DebtType = debt.DebtType,
+                DebtAmount = debt.DebtAmount,
+                DebtCategory = debt.DebtCategory,
+                DueDate = debt.DueDate,
+                IsPaid = debt.IsPaid,
+                WhenAdded = debt.WhenAdded
+            };
+        isEditMode = true;
+        isModalVisible = true;
     }
 
     private void CloseModal()
     {
-        isModalVisible = false; // Close the modal
+        isModalVisible = false;
+        currentDebt = new ExpenseTracker.Models.Debt();
     }
 
     private void ToggleSort()
@@ -277,24 +265,54 @@ else
 
     private async Task SaveDebtAsync()
     {
-        if (isEditMode)
+        try
         {
-            await DebtService.UpdateDebtAsync(currentDebt); // Update existing debt
-        }
-        else
-        {
-            await DebtService.AddDebtAsync(currentDebt); // Add new debt
-        }
+            if (isEditMode)
+            {
+                await DebtService.UpdateDebtAsync(currentDebt);
+            }
+            else
+            {
+                await DebtService.AddDebtAsync(currentDebt);
+            }
 
-        CloseModal();
-        await LoadDebtsAsync(); // Reload the debts after saving
-        ApplyFilter(); // Reapply filters after save
+            await LoadDebtsAsync();
+            ApplyFilter();
+            CloseModal();
+        }
+        catch (Exception)
+        {
+            // Handle error appropriately
+        }
     }
 
     private async Task DeleteDebtAsync(Guid debtId)
     {
-        await DebtService.DeleteDebtAsync(debtId); // Delete the selected debt
-        await LoadDebtsAsync(); // Reload the debts after delete
-        ApplyFilter(); // Reapply filters after deletion
+        try
+        {
+            await DebtService.DeleteDebtAsync(debtId);
+            await LoadDebtsAsync();
+            ApplyFilter();
+        }
+        catch (Exception)
+        {
+            // Handle error appropriately
+        }
+    }
+
+    private void ExportDebts()
+    {
+        var debtsToExport = filteredDebts.Select(d => new
+        {
+            Description = d.DebtDescription,
+            Type = d.DebtType,
+            Amount = d.DebtAmount.ToString("C"),
+            Category = d.DebtCategory,
+            DueDate = d.DueDate.ToString("yyyy-MM-dd"),
+            IsPaid = d.IsPaid ? "Yes" : "No",
+            WhenAdded = d.WhenAdded.ToString("yyyy-MM-dd")
+        }).ToList();
+
+        // Implement export logic here
     }
 }

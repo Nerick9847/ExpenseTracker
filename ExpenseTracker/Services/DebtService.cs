@@ -8,6 +8,8 @@ namespace ExpenseTracker.Services
 {
     public class DebtService
     {
+        public DebtService() { }
+
         public async Task<List<Debt>> GetDebtsAsync()
         {
             var database = await DebtDatabase.LoadDatabaseAsync();
