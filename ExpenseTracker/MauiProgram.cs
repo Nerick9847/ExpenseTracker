@@ -1,5 +1,6 @@
 ﻿using ExpenseTracker.Services;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 
 namespace ExpenseTracker
 {
@@ -18,6 +19,8 @@ namespace ExpenseTracker
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddSingleton<TransactionService>();
             builder.Services.AddSingleton<DebtService>();
+            builder.Services.AddMudServices();
+
 
 
 #if DEBUG
