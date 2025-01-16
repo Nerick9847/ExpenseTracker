@@ -1,5 +1,8 @@
 @page "/debt"
 @inject ExpenseTracker.Services.DebtService DebtService
+@using ExpenseTracker.Services
+@inject BalanceState BalanceState
+
 
 <div class="dashboard-header">
     <div class="buttons-container">
@@ -17,23 +20,16 @@
             <option value="@category">@category</option>
         }
     </select>
-    <select class="form-control" @bind="filterType" @bind:after="ApplyFilter">
-        <option value="">Select Type</option>
-        <option value="Personal">Personal</option>
-        <option value="Business">Business</option>
-        <option value="Student Loan">Student Loan</option>
-        <option value="Home Loan">Home Loan</option>
-    </select>
-    <select class="form-control" @bind="filterIsPaid" @bind:after="ApplyFilter">
+    <select class="form-control" @bind="selectedPaymentStatus">
         <option value="">Select Payment Status</option>
-        <option value="true">Paid</option>
-        <option value="false">Pending</option>
+        <option value="Paid">Paid</option>
+        <option value="Pending">Pending</option>
     </select>
     <div class="date-range">
         <label>Start Date:</label>
-        <input type="date" class="form-control" @bind="startDate" @bind:after="ApplyFilter" />
+        <input type="date" class="form-control" @bind="startDate" />
         <label>End Date:</label>
-        <input type="date" class="form-control" @bind="endDate" @bind:after="ApplyFilter" />
+        <input type="date" class="form-control" @bind="endDate" />
     </div>
     <div class="filter-buttons">
         <button class="btn btn-primary" @onclick="ApplyFilter">Filter</button>
@@ -46,7 +42,6 @@
     <thead>
         <tr>
             <th>Description</th>
-            <th>Type</th>
             <th>Amount</th>
             <th>Category</th>
             <th>Due Date</th>
@@ -60,11 +55,10 @@
         {
             <tr>
                 <td>@debt.DebtDescription</td>
-                <td>@debt.DebtType</td>
                 <td>@debt.DebtAmount.ToString("C")</td>
                 <td>@debt.DebtCategory</td>
                 <td>@debt.DueDate.ToShortDateString()</td>
-                <td>@(debt.IsPaid ? "Yes" : "No")</td>
+                <td>@(debt.IsPaid ? "Paid" : "Pending")</td>
                 <td>@debt.WhenAdded.ToShortDateString()</td>
                 <td>
                     <button class="btn btn-warning" @onclick="() => ShowEditDebtModal(debt)">Edit</button>
@@ -90,17 +84,6 @@
                 </div>
 
                 <div>
-                    <label>Type:</label>
-                    <InputSelect class="form-control" @bind-Value="currentDebt.DebtType">
-                        <option value="">Select Type</option>
-                        <option value="Personal">Personal</option>
-                        <option value="Business">Business</option>
-                        <option value="Student Loan">Student Loan</option>
-                        <option value="Home Loan">Home Loan</option>
-                    </InputSelect>
-                </div>
-
-                <div>
                     <label>Amount:</label>
                     <InputNumber class="form-control" @bind-Value="currentDebt.DebtAmount" />
                 </div>
@@ -122,8 +105,8 @@
                 </div>
 
                 <div>
-                    <label>Is Paid:</label>
-                    <InputCheckbox @bind-Value="currentDebt.IsPaid" />
+                    <label>Payment Status:</label>
+                    <InputCheckbox @bind-Value="currentDebt.IsPaid" /> Is Paid
                 </div>
 
                 <div>
@@ -139,21 +122,38 @@
         </div>
     </div>
 }
-
 @code {
     private List<ExpenseTracker.Models.Debt> debts = new();
     private List<ExpenseTracker.Models.Debt> filteredDebts = new();
     private ExpenseTracker.Models.Debt currentDebt = new();
+    private bool showBalanceError = false;
+    private string balanceErrorMessage = string.Empty;
     private bool isModalVisible = false;
     private bool isEditMode = false;
     private string filterDescription = "";
     private string filterCategory = "";
-    private string filterType = "";
+    private string _selectedPaymentStatus = "";
+    private string selectedPaymentStatus
+    {
+        get => _selectedPaymentStatus;
+        set
+        {
+            _selectedPaymentStatus = value;
+            filterIsPaid = value switch
+            {
+                "Paid" => true,
+                "Pending" => false,
+                _ => null
+            };
+            ApplyFilter();
+        }
+    }
     private bool? filterIsPaid = null;
     private DateTime? startDate = null;
     private DateTime? endDate = null;
     private List<string> categories = new List<string> { "Personal", "Business", "Student Loan", "Home Loan" };
     private bool isSortedAscending = true;
+    private decimal currentBalance = 1000m; // Example balance, replace with your actual balance retrieval logic
 
     protected override async Task OnInitializedAsync()
     {
@@ -163,7 +163,14 @@
 
     private async Task LoadDebtsAsync()
     {
-        debts = await DebtService.GetDebtsAsync();
+        try
+        {
+            debts = await DebtService.GetDebtsAsync();
+        }
+        catch (Exception)
+        {
+            debts = new List<ExpenseTracker.Models.Debt>();
+        }
     }
 
     private void ApplyFilter()
@@ -182,25 +189,25 @@
                 d.DebtCategory.Equals(filterCategory, StringComparison.OrdinalIgnoreCase));
         }
 
-        if (!string.IsNullOrWhiteSpace(filterType))
-        {
-            query = query.Where(d => d.DebtType != null &&
-                d.DebtType.Equals(filterType, StringComparison.OrdinalIgnoreCase));
-        }
-
         if (filterIsPaid.HasValue)
         {
             query = query.Where(d => d.IsPaid == filterIsPaid.Value);
         }
 
-        if (startDate.HasValue)
+        if (startDate.HasValue && endDate.HasValue)
         {
-            query = query.Where(d => d.DueDate >= startDate.Value);
+            var endDateAdjusted = endDate.Value.Date.AddDays(1).AddSeconds(-1);
+            query = query.Where(d => d.DueDate.Date >= startDate.Value.Date &&
+                                   d.DueDate.Date <= endDateAdjusted.Date);
         }
-
-        if (endDate.HasValue)
+        else if (startDate.HasValue)
         {
-            query = query.Where(d => d.DueDate <= endDate.Value);
+            query = query.Where(d => d.DueDate.Date >= startDate.Value.Date);
+        }
+        else if (endDate.HasValue)
+        {
+            var endDateAdjusted = endDate.Value.Date.AddDays(1).AddSeconds(-1);
+            query = query.Where(d => d.DueDate.Date <= endDateAdjusted.Date);
         }
 
         filteredDebts = isSortedAscending
@@ -214,7 +221,7 @@
     {
         filterDescription = "";
         filterCategory = "";
-        filterType = "";
+        _selectedPaymentStatus = "";
         filterIsPaid = null;
         startDate = null;
         endDate = null;
@@ -240,7 +247,6 @@
             {
                 DebtId = debt.DebtId,
                 DebtDescription = debt.DebtDescription,
-                DebtType = debt.DebtType,
                 DebtAmount = debt.DebtAmount,
                 DebtCategory = debt.DebtCategory,
                 DueDate = debt.DueDate,
@@ -255,6 +261,7 @@
     {
         isModalVisible = false;
         currentDebt = new ExpenseTracker.Models.Debt();
+        showBalanceError = false;
     }
 
     private void ToggleSort()
@@ -286,6 +293,29 @@
         }
     }
 
+    private async Task MarkDebtAsPaidAsync(ExpenseTracker.Models.Debt debt)
+    {
+        if (debt.DebtAmount > currentBalance)
+        {
+            showBalanceError = true;
+            balanceErrorMessage = "Insufficient balance to mark this debt as paid.";
+            return;
+        }
+
+        try
+        {
+            debt.IsPaid = true;
+            currentBalance -= debt.DebtAmount; // Deduct from balance
+            await DebtService.UpdateDebtAsync(debt);
+            await LoadDebtsAsync();
+            ApplyFilter();
+        }
+        catch (Exception)
+        {
+            // Handle error appropriately
+        }
+    }
+
     private async Task DeleteDebtAsync(Guid debtId)
     {
         try
@@ -305,11 +335,10 @@
         var debtsToExport = filteredDebts.Select(d => new
         {
             Description = d.DebtDescription,
-            Type = d.DebtType,
             Amount = d.DebtAmount.ToString("C"),
             Category = d.DebtCategory,
             DueDate = d.DueDate.ToString("yyyy-MM-dd"),
-            IsPaid = d.IsPaid ? "Yes" : "No",
+            IsPaid = d.IsPaid ? "Paid" : "Pending",
             WhenAdded = d.WhenAdded.ToString("yyyy-MM-dd")
         }).ToList();
 

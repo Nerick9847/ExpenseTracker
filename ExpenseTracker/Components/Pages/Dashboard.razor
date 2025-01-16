@@ -3,6 +3,7 @@
 @using ExpenseTracker.Services
 @inject TransactionService transactionService
 @inject DebtService debtService
+@inject BalanceState BalanceState
 @using MudBlazor
 
 <h3>Dashboard</h3>
@@ -35,8 +36,12 @@
             <p>@TotalExpense.ToString("C")</p>
         </div>
         <div class="card debt-card">
-            <h4>Debt</h4>
-            <p>@TotalDebt.ToString("C")</p>
+            <h4>Pending Debt</h4>
+            <p>@TotalPendingDebt.ToString("C")</p>
+        </div>
+        <div class="card paid-debt-card">
+            <h4>Paid Debt</h4>
+            <p>@TotalPaidDebt.ToString("C")</p>
         </div>
     </div>
 
@@ -44,10 +49,10 @@
     <div class="card transactions-chart-card">
         <h4>Transactions Chart</h4>
         <MudChart ChartType="ChartType.Pie"
-                  InputData="@transactionCounts"
-                  InputLabels="@transactionLabels"
-                  Width="300px"
-                  Height="300px" />
+        InputData="@transactionCounts"
+        InputLabels="@transactionLabels"
+        Width="300px"
+        Height="300px" />
     </div>
 
     <!-- Tables -->
@@ -117,10 +122,38 @@
                     <th>Amount</th>
                     <th>Category</th>
                     <th>Due Date</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var debt in PendingDebts)
+                {
+                    <tr>
+                        <td>@debt.DebtDescription</td>
+                        <td>@debt.DebtAmount.ToString("C")</td>
+                        <td>@debt.DebtCategory</td>
+                        <td>@debt.DueDate.ToShortDateString()</td>
+                        <td>Pending</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paid Debts Table -->
+    <div class="table paid-debt-table">
+        <h4>Paid Debts</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var debt in PaidDebts)
                 {
                     <tr>
                         <td>@debt.DebtDescription</td>
@@ -137,7 +170,8 @@
 @code {
     private decimal TotalIncome;
     private decimal TotalExpense;
-    private decimal TotalDebt;
+    private decimal TotalPendingDebt;
+    private decimal TotalPaidDebt;
     private decimal Balance;
 
     private List<FinancialTransaction> AllTransactions = new();
@@ -145,12 +179,13 @@
     private List<FinancialTransaction> OutflowTransactions = new();
     private List<ExpenseTracker.Models.Debt> AllDebts = new();
     private List<ExpenseTracker.Models.Debt> PendingDebts = new();
+    private List<ExpenseTracker.Models.Debt> PaidDebts = new();
 
     private DateTime StartDate = DateTime.Now.AddMonths(-1);
     private DateTime EndDate = DateTime.Now;
 
-    private double[] transactionCounts = new double[3]; // [Income, Expense, Debt]
-    private string[] transactionLabels = { "Inflow", "Outflow", "Debt" };
+    private double[] transactionCounts = new double[4]; // [Income, Expense, PendingDebt, PaidDebt]
+    private string[] transactionLabels = { "Inflow", "Outflow", "Pending Debt", "Paid Debt" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -176,6 +211,10 @@
             .Where(d => !d.IsPaid && d.DueDate >= StartDate && d.DueDate <= EndDate)
             .ToList();
 
+        PaidDebts = AllDebts
+            .Where(d => d.IsPaid && d.DueDate >= StartDate && d.DueDate <= EndDate)
+            .ToList();
+
         UpdateTotalsAndChart();
     }
 
@@ -191,6 +230,7 @@
         InflowTransactions = AllTransactions.Where(t => t.Type == "Income").ToList();
         OutflowTransactions = AllTransactions.Where(t => t.Type == "Expense").ToList();
         PendingDebts = AllDebts.Where(d => !d.IsPaid).ToList();
+        PaidDebts = AllDebts.Where(d => d.IsPaid).ToList();
 
         UpdateTotalsAndChart();
     }
@@ -199,12 +239,19 @@
     {
         TotalIncome = InflowTransactions.Sum(t => t.Amount);
         TotalExpense = OutflowTransactions.Sum(t => t.Amount);
-        TotalDebt = PendingDebts.Sum(d => d.DebtAmount);
-        Balance = TotalIncome + TotalDebt - TotalExpense;
+        TotalPendingDebt = PendingDebts.Sum(d => d.DebtAmount);
+        TotalPaidDebt = PaidDebts.Sum(d => d.DebtAmount);
+
+        // Updated balance calculation: Inflow - Outflow - PaidDebt
+        Balance = TotalIncome - TotalExpense - TotalPaidDebt;
 
         // Update pie chart data
         transactionCounts[0] = InflowTransactions.Count;
         transactionCounts[1] = OutflowTransactions.Count;
         transactionCounts[2] = PendingDebts.Count;
+        transactionCounts[3] = PaidDebts.Count;
+
+        //Update the shared balance state
+        BalanceState.UpdateBalance(Balance);
     }
 }
