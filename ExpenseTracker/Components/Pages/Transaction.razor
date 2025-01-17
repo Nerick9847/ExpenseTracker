@@ -1,4 +1,4 @@
-@page "/transaction"
+﻿@page "/transaction"
 @using ExpenseTracker.Services
 @inject BalanceState BalanceState
 @inject TransactionService TransactionService
@@ -35,7 +35,9 @@
     <div class="filter-buttons">
         <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-        <button class="btn btn-info" @onclick="ToggleSort">Sort by Amount @(isSortedAscending ? "Ascending" : "Descending")</button>
+        <button class="btn btn-info" @onclick ="ToggleAmountSort">
+            Sort by Amount @(isAmountSortedAscending ? "(Ascending)" : "(Descending)")
+        </button>
     </div>
 </div>
 
@@ -43,7 +45,11 @@
     <thead>
         <tr>
             <th>Description</th>
-            <th>Date</th>
+            <th>
+                <button class="btn btn-info" @onclick="ToggleDateSort">
+                    Date @(isDateSortedAscending ? "(Ascending)" : "(Descending)")
+                </button>
+            </th>
             <th>Amount</th>
             <th>Type</th>
             <th>Category</th>
@@ -134,5 +140,4 @@
         </div>
     </div>
 }
-
 
