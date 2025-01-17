@@ -89,12 +89,12 @@
 }
 
 .btn-add {
-    background-color: #28a745; /* Green color for Add button */
+    background-color: #28a745; 
     color: white;
 }
 
 .btn-clear {
-    background-color: #dc3545; /* Red color for Clear button */
+    background-color: #dc3545; 
     color: white;
 }
 

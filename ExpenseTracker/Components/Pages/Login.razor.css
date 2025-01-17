@@ -2,11 +2,11 @@
 }
 
 .logo {
-    font-family: 'Roboto', sans-serif; /* Modern font */
-    font-size: 3rem; /* Larger font size */
-    color: #5f6368; /* Subtle grey color */
-    font-weight: 700; /* Bold font weight */
-    letter-spacing: 2px; /* Add spacing between the letters */
-    text-transform: uppercase; /* Make text uppercase for a bold look */
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+    font-family: 'Roboto', sans-serif; 
+    font-size: 3rem; 
+    color: #5f6368;
+    font-weight: 700; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
 }

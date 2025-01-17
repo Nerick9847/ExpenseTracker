@@ -1,6 +1,7 @@
 ﻿public class AuthenticationStateService
 {
-    private bool _isAuthenticated;
+    private bool _isAuthenticated; // Tracks the current authentication state
+
     public event Action? OnAuthenticationStateChanged;
 
     public bool IsAuthenticated
@@ -9,6 +10,7 @@
         private set
         {
             _isAuthenticated = value;
+            // Notify authentication state changes
             OnAuthenticationStateChanged?.Invoke();
         }
     }

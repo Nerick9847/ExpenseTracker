@@ -2,28 +2,39 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateService AuthState
 
+<!-- Centered container for the login card -->
 <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card shadow-lg" style="width: 400px; border-radius: 20px;">
         <div class="card-body">
+            <!-- Logo and title section -->
             <div class="text-center mb-4">
                 <h1 class="logo">Pexp</h1>
             </div>
             <h3 class="card-title text-center mb-4">Login</h3>
+
+            <!-- Form for user login -->
             <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <!-- Validations -->
                 <DataAnnotationsValidator />
                 <ValidationSummary />
+
+                <!-- Username input field -->
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <InputText id="username" class="form-control" @bind-Value="loginModel.Username"
                                placeholder="Enter your username"
                                style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
                 </div>
+
+                <!-- Password input field -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
                     <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password"
                                placeholder="Enter your password"
                                style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
                 </div>
+
+                <!-- Currency selection dropdown -->
                 <div class="mb-3">
                     <label for="currency" class="form-label">Currency</label>
                     <select id="currency" class="form-control" @bind="selectedCurrency"
@@ -34,12 +45,16 @@
                         <option value="EUR">EUR</option>
                     </select>
                 </div>
+
+                <!-- Display error message if login fails -->
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <div class="alert alert-danger" role="alert">
                         @errorMessage
                     </div>
                 }
+
+                <!-- Login button -->
                 <button type="submit" class="btn btn-dark w-100"
                         style="border-radius: 15px; height: 45px; font-weight: 600;">
                     Login

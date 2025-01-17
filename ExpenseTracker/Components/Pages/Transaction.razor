@@ -3,7 +3,7 @@
 @inject BalanceState BalanceState
 @inject TransactionService TransactionService
 
-
+<!-- Header section with buttons for adding a transaction, adding a category, and exporting transactions -->
 <div class="dashboard-header">
     <div class="buttons-container">
         <button class="btn btn-primary" @onclick="OpenAddModal">Add Transaction</button>
@@ -12,13 +12,19 @@
     </div>
 </div>
 
+<!-- Filter section for searching and filtering transactions by various criteria -->
 <div class="filter-container">
+    <!-- Search transactions by description -->
     <input type="text" class="form-control" @bind="descriptionFilter" placeholder="Search by Description" />
+
+    <!-- Dropdown to filter transactions by type (Income/Expense) -->
     <select class="form-control" @bind="selectedType">
         <option value="">Select Type</option>
         <option value="Income">Income</option>
         <option value="Expense">Expense</option>
     </select>
+
+    <!-- Dropdown to filter transactions by category -->
     <select class="form-control" @bind="selectedCategory">
         <option value="">Select Category</option>
         @foreach (var category in database.Categories)
@@ -26,21 +32,26 @@
             <option value="@category">@category</option>
         }
     </select>
+
+    <!-- Date range filters -->
     <div class="date-range">
         <label>Start Date:</label>
         <input type="date" class="form-control" @bind="startDate" />
         <label>End Date:</label>
         <input type="date" class="form-control" @bind="endDate" />
     </div>
+
+    <!-- Buttons to apply or clear filters, and toggle sorting by amount -->
     <div class="filter-buttons">
         <button class="btn btn-primary" @onclick="FilterTransactions">Filter</button>
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
-        <button class="btn btn-info" @onclick ="ToggleAmountSort">
+        <button class="btn btn-info" @onclick="ToggleAmountSort">
             Sort by Amount @(isAmountSortedAscending ? "(Ascending)" : "(Descending)")
         </button>
     </div>
 </div>
 
+<!-- Transactions table displaying filtered transactions -->
 <table class="transaction-table">
     <thead>
         <tr>
@@ -77,6 +88,7 @@
 </table>
 
 
+<!--Modal for adding or editing transactions-->
 @if (showTransactionModal)
 {
     <div class="modal">
@@ -124,6 +136,7 @@
     </div>
 }
 
+<!-- Modal for adding new categories -->
 @if (showCategoryModal)
 {
     <div class="modal">
@@ -140,4 +153,3 @@
         </div>
     </div>
 }
-

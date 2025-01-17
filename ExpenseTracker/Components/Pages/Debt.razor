@@ -1,18 +1,23 @@
 @page "/debt"
+
 @inject ExpenseTracker.Services.DebtService DebtService
 @using ExpenseTracker.Services
 @inject BalanceState BalanceState
 
-
+<!-- Header section with buttons to add a new debt and export debts. -->
 <div class="dashboard-header">
     <div class="buttons-container">
-        <button class="btn btn-primary" @onclick="ShowAddDebtModal">Add Debt</button>
+        <button class="btn btn-primary" @onclick="ShowAddDebtModal">Add Debt</button> 
         <button class="btn btn-info" @onclick="ExportDebts">Export</button>
     </div>
 </div>
 
+<!-- Debt filteration on various criteria -->
 <div class="filter-container">
+    <!--Real time filteration by description -->
     <input type="text" class="form-control" @bind="filterDescription" @bind:after="ApplyFilter" placeholder="Search by Description" />
+    
+    <!--Dropdown for filtering debts by category-->
     <select class="form-control" @bind="filterCategory" @bind:after="ApplyFilter">
         <option value="">Select Category</option>
         @foreach (var category in categories)
@@ -20,24 +25,33 @@
             <option value="@category">@category</option>
         }
     </select>
+
+    <!--Dropdown for filtering by payment status-->
     <select class="form-control" @bind="selectedPaymentStatus">
         <option value="">Select Payment Status</option>
         <option value="Paid">Paid</option>
         <option value="Pending">Pending</option>
     </select>
+
+    <!-- Date range picker for filtereing debts by start and end dates-->
     <div class="date-range">
         <label>Start Date:</label>
         <input type="date" class="form-control" @bind="startDate" />
         <label>End Date:</label>
         <input type="date" class="form-control" @bind="endDate" />
     </div>
+
+    <!-- button to apply or clear filters-->
     <div class="filter-buttons">
         <button class="btn btn-primary" @onclick="ApplyFilter">Filter</button>
         <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+
+        <!--Sortin by amount-->
         <button class="btn btn-info" @onclick="ToggleSort">Sort by Amount @(isSortedAscending ? "Ascending" : "Descending")</button>
     </div>
 </div>
 
+<!--Table displaying the debts data-->
 <table class="transaction-table">
     <thead>
         <tr>
@@ -69,11 +83,14 @@
     </tbody>
 </table>
 
+<!--Modal for adding or editin a debt-->
 @if (isModalVisible)
 {
     <div class="modal">
         <div class="modal-content">
+            <!-- Changin the hearder dynamically-->
             <h2>@(isEditMode ? "Edit Debt" : "Add New Debt")</h2>
+
             <EditForm Model="currentDebt" OnValidSubmit="SaveDebtAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />

@@ -25,7 +25,7 @@
     width: 200px;
     padding: 8px;
     font-size: 14px;
-    border-radius: 10px; /* Rounded edge for input */
+    border-radius: 10px; 
     border: 1px solid #bbb;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     background-color: #f9f9f9;
@@ -54,7 +54,7 @@
     font-size: 14px;
     border: none;
     cursor: pointer;
-    border-radius: 6px; /* Slightly rounded edge for buttons */
+    border-radius: 6px;
     transition: all 0.3s ease;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
@@ -89,12 +89,12 @@
 }
 
 .btn-add {
-    background-color: #28a745; /* Green color for Add button */
+    background-color: #28a745; 
     color: white;
 }
 
 .btn-clear {
-    background-color: #dc3545; /* Red color for Clear button */
+    background-color: #dc3545; 
     color: white;
 }
 
