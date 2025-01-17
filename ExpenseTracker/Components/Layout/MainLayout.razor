@@ -1,16 +1,37 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateService AuthState
+@implements IDisposable
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
+    @if (AuthState.IsAuthenticated)
+    {
+        <div class="sidebar">
+            <NavMenu />
         </div>
-
-        <article class="content px-4">
+        <main>
+            <div class="top-row px-4">
+            </div>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    }
+    else
+    {
+        <main class="w-100">
             @Body
-        </article>
-    </main>
+        </main>
+    }
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthState.OnAuthenticationStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnAuthenticationStateChanged -= StateHasChanged;
+    }
+}

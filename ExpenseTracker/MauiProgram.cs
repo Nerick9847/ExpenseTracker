@@ -18,6 +18,7 @@ namespace ExpenseTracker
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddSingleton<TransactionService>();
+            builder.Services.AddSingleton<AuthenticationStateService>();
             builder.Services.AddSingleton<BalanceState>();
             builder.Services.AddSingleton<DebtService>();
             builder.Services.AddMudServices();

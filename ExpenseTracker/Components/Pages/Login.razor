@@ -1,72 +1,50 @@
 @page "/"
 @inject NavigationManager Navigation
+@inject AuthenticationStateService AuthState
 
 <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card shadow-lg" style="width: 400px; border-radius: 20px;">
         <div class="card-body">
-            <!-- Logo above the login title -->
             <div class="text-center mb-4">
                 <h1 class="logo">Pexp</h1>
             </div>
-            
-            <!-- Login Title -->
             <h3 class="card-title text-center mb-4">Login</h3>
-
             <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-
-                <!-- Username Input -->
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
-                    <InputText id="username" class="form-control" @bind-Value="loginModel.Username" placeholder="Enter your username" style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
+                    <InputText id="username" class="form-control" @bind-Value="loginModel.Username"
+                               placeholder="Enter your username"
+                               style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
                 </div>
-
-                <!-- Password Input -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="Enter your password" style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
+                    <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password"
+                               placeholder="Enter your password"
+                               style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;" />
                 </div>
-
-                <!-- Currency Dropdown -->
                 <div class="mb-3">
                     <label for="currency" class="form-label">Currency</label>
-                    <select id="currency" class="form-control" @bind="selectedCurrency" style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;">
+                    <select id="currency" class="form-control" @bind="selectedCurrency"
+                            style="border-radius: 15px; box-shadow: inset 4px 4px 6px rgba(0,0,0,0.1), inset -4px -4px 6px rgba(255,255,255,0.8); padding: 12px;">
                         <option value="NPR">NPR</option>
                         <option value="INR">INR</option>
                         <option value="USD">USD</option>
                         <option value="EUR">EUR</option>
                     </select>
                 </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn btn-dark w-100" style="border-radius: 15px; height: 45px; font-weight: 600;">Login</button>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @errorMessage
+                    </div>
+                }
+                <button type="submit" class="btn btn-dark w-100"
+                        style="border-radius: 15px; height: 45px; font-weight: 600;">
+                    Login
+                </button>
             </EditForm>
         </div>
     </div>
 </div>
-
-@code {
-    private LoginModel loginModel = new LoginModel();
-    private string selectedCurrency = "NPR"; // Default currency value
-
-    private void HandleLogin()
-    {
-        // Perform login logic (authentication)
-        if (loginModel.Username == "nerick" && loginModel.Password == "9847") // Dummy check
-        {
-            // Navigate to the /dashboard page after successful login
-            Navigation.NavigateTo("/dashboard");
-        }
-        else
-        {
-            Console.WriteLine("Wrong username or password");
-        }
-    }
-
-    public class LoginModel
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
-}

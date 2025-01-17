@@ -1,11 +1,13 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject AuthenticationStateService AuthState
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Pexp</a>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
@@ -20,13 +22,22 @@
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/debt">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Debt Management
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Debt 
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/login">
+        <div class="nav-item logout">
+            <button class="logout-box" @onclick="HandleLogout">
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Logout
-            </NavLink>
+            </button>
         </div>
+
     </nav>
 </div>
+
+@code {
+    private void HandleLogout()
+    {
+        AuthState.Logout();
+        Navigation.NavigateTo("/");
+    }
+}

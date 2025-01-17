@@ -127,3 +127,55 @@
         background-color: #263238; /* Darker background */
     }
 }
+
+/* Place logout button at the bottom of the nav menu */
+.nav-scrollable {
+    display: none;
+    position: relative;
+    height: calc(100vh - 3.5rem); /* Full height minus top row */
+    overflow-y: auto;
+    background-color: #263238; /* Darker background */
+    padding-bottom: 4rem; /* Add space for logout button */
+}
+
+/* Logout button styling */
+.nav-item.logout {
+    position: absolute;
+    bottom: 1rem;
+    width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.logout-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background-color: #d32f2f; /* Red theme */
+    color: white;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+    text-align: center;
+}
+
+    /* Hover effect for logout button */
+    .logout-box:hover {
+        background-color: #b71c1c; /* Darker red on hover */
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+
+/* Adjustments for larger screens */
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .nav-scrollable {
+        display: block;
+        height: calc(100vh - 3.5rem);
+    }
+}
